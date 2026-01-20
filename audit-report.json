@@ -1,0 +1,105 @@
+{
+  "auditReportVersion": 2,
+  "vulnerabilities": {
+    "jquery": {
+      "name": "jquery",
+      "severity": "moderate",
+      "isDirect": true,
+      "via": [
+        {
+          "source": 1094143,
+          "name": "jquery",
+          "dependency": "jquery",
+          "title": "Cross-Site Scripting (XSS) in jquery",
+          "url": "https://github.com/advisories/GHSA-rmxg-73gg-4p98",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-79"
+          ],
+          "cvss": {
+            "score": 6.1,
+            "vectorString": "CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N"
+          },
+          "range": ">=1.12.3 <3.0.0"
+        },
+        {
+          "source": 1100396,
+          "name": "jquery",
+          "dependency": "jquery",
+          "title": "XSS in jQuery as used in Drupal, Backdrop CMS, and other products",
+          "url": "https://github.com/advisories/GHSA-6c3j-c64m-qhgq",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-79",
+            "CWE-1321"
+          ],
+          "cvss": {
+            "score": 6.1,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N"
+          },
+          "range": ">=1.1.4 <3.4.0"
+        },
+        {
+          "source": 1102100,
+          "name": "jquery",
+          "dependency": "jquery",
+          "title": "Potential XSS vulnerability in jQuery",
+          "url": "https://github.com/advisories/GHSA-gxr4-xjj5-5px2",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-79"
+          ],
+          "cvss": {
+            "score": 6.9,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:C/C:H/I:L/A:N"
+          },
+          "range": ">=1.2.0 <3.5.0"
+        },
+        {
+          "source": 1109145,
+          "name": "jquery",
+          "dependency": "jquery",
+          "title": "Potential XSS vulnerability in jQuery",
+          "url": "https://github.com/advisories/GHSA-jpcq-cgw6-v4j6",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-79"
+          ],
+          "cvss": {
+            "score": 6.9,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:C/C:H/I:L/A:N/E:H"
+          },
+          "range": ">=1.0.3 <3.5.0"
+        }
+      ],
+      "effects": [],
+      "range": "<=3.4.1",
+      "nodes": [
+        "node_modules/jquery"
+      ],
+      "fixAvailable": {
+        "name": "jquery",
+        "version": "4.0.0",
+        "isSemVerMajor": true
+      }
+    }
+  },
+  "metadata": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 1,
+      "high": 0,
+      "critical": 0,
+      "total": 1
+    },
+    "dependencies": {
+      "prod": 71,
+      "dev": 0,
+      "optional": 0,
+      "peer": 0,
+      "peerOptional": 0,
+      "total": 70
+    }
+  }
+}

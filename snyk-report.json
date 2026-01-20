@@ -1,0 +1,890 @@
+{
+  "vulnerabilities": [
+    {
+      "id": "SNYK-JS-JQUERY-174006",
+      "title": "Prototype Pollution",
+      "CVSSv3": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:L/A:L/E:F",
+      "credit": [
+        "Semmle Security Research Team"
+      ],
+      "semver": {
+        "vulnerable": [
+          "<3.4.0"
+        ]
+      },
+      "exploit": "Functional",
+      "fixedIn": [
+        "3.4.0"
+      ],
+      "patches": [],
+      "insights": {
+        "triageAdvice": null
+      },
+      "language": "js",
+      "severity": "medium",
+      "cvssScore": 5.6,
+      "functions": [
+        {
+          "version": [
+            ">2.2.4 <=3.3.1"
+          ],
+          "functionId": {
+            "filePath": "dist/core.js",
+            "className": null,
+            "functionName": "jQuery.extend.jQuery.fn.extend"
+          }
+        },
+        {
+          "version": [
+            ">1.8.3 <=2.2.4"
+          ],
+          "functionId": {
+            "filePath": "src/core.js",
+            "className": null,
+            "functionName": "jQuery.extend.jQuery.fn.extend"
+          }
+        },
+        {
+          "version": [
+            "<=1.8.3"
+          ],
+          "functionId": {
+            "filePath": "test/core.js",
+            "className": null,
+            "functionName": "module.exports.jQuery.extend(Object, Object)"
+          }
+        }
+      ],
+      "malicious": false,
+      "isDisputed": false,
+      "moduleName": "jquery",
+      "references": [
+        {
+          "url": "https://github.com/jquery/jquery/commit/753d591aea698e57d6db58c9f722cd0808619b1b",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://github.com/jquery/jquery/pull/4333",
+          "title": "GitHub PR"
+        },
+        {
+          "url": "https://hackerone.com/reports/454365",
+          "title": "Hackerone Report"
+        },
+        {
+          "url": "https://snyk.io/blog/after-three-years-of-silence-a-new-jquery-prototype-pollution-vulnerability-emerges-once-again/",
+          "title": "Snyk Blog"
+        },
+        {
+          "url": "https://github.com/DanielRuf/snyk-js-jquery-174006",
+          "title": "Third-Party Backported Patches Repo"
+        },
+        {
+          "url": "https://www.exploit-db.com/exploits/52141",
+          "title": "Exploit DB"
+        },
+        {
+          "url": "https://github.com/chrisneagu/FTC-Skystone-Dark-Angels-Romania-2020",
+          "title": "PoC in GitHub"
+        }
+      ],
+      "cvssDetails": [
+        {
+          "assigner": "NVD",
+          "severity": "medium",
+          "cvssV3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N",
+          "cvssV3BaseScore": 6.1,
+          "modificationTime": "2024-03-11T09:47:28.913980Z"
+        },
+        {
+          "assigner": "Red Hat",
+          "severity": "medium",
+          "cvssV3Vector": "CVSS:3.0/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:L/A:L",
+          "cvssV3BaseScore": 5.6,
+          "modificationTime": "2024-03-11T09:53:58.699115Z"
+        }
+      ],
+      "cvssSources": [
+        {
+          "type": "primary",
+          "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:L/A:L/E:F",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 5.6,
+          "cvssVersion": "3.1",
+          "modificationTime": "2024-11-04T12:15:36.516854Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N",
+          "assigner": "NVD",
+          "severity": "medium",
+          "baseScore": 6.1,
+          "cvssVersion": "3.1",
+          "modificationTime": "2024-03-11T09:47:28.913980Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.0/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:L/A:L",
+          "assigner": "Red Hat",
+          "severity": "medium",
+          "baseScore": 5.6,
+          "cvssVersion": "3.0",
+          "modificationTime": "2024-03-11T09:53:58.699115Z"
+        }
+      ],
+      "description": "## Overview\n[jquery](https://www.npmjs.com/package/jquery) is a package that makes things like HTML document traversal and manipulation, event handling, animation, and Ajax much simpler with an easy-to-use API that works across a multitude of browsers.\n\nAffected versions of this package are vulnerable to Prototype Pollution. The `extend` function can be tricked into modifying the prototype of `Object` when the attacker controls part of the structure passed to this function. This can let an attacker add or modify an existing property that will then exist on all objects.\r\n\r\n**Note:** CVE-2019-5428 is a duplicate of CVE-2019-11358\n\n## Details\n\nPrototype Pollution is a vulnerability affecting JavaScript. Prototype Pollution refers to the ability to inject properties into existing JavaScript language construct prototypes, such as objects. JavaScript allows all Object attributes to be altered, including their magical attributes such as `__proto__`, `constructor` and `prototype`. An attacker manipulates these attributes to overwrite, or pollute, a JavaScript application object prototype of the base object by injecting other values.  Properties on the `Object.prototype` are then inherited by all the JavaScript objects through the prototype chain. When that happens, this leads to either denial of service by triggering JavaScript exceptions, or it tampers with the application source code to force the code path that the attacker injects, thereby leading to remote code execution.\n\nThere are two main ways in which the pollution of prototypes occurs:\n\n-   Unsafe `Object` recursive merge\n    \n-   Property definition by path\n    \n\n### Unsafe Object recursive merge\n\nThe logic of a vulnerable recursive merge function follows the following high-level model:\n```\nmerge (target, source)\n\n  foreach property of source\n\n    if property exists and is an object on both the target and the source\n\n      merge(target[property], source[property])\n\n    else\n\n      target[property] = source[property]\n```\n<br>  \n\nWhen the source object contains a property named `__proto__` defined with `Object.defineProperty()` , the condition that checks if the property exists and is an object on both the target and the source passes and the merge recurses with the target, being the prototype of `Object` and the source of `Object` as defined by the attacker. Properties are then copied on the `Object` prototype.\n\nClone operations are a special sub-class of unsafe recursive merges, which occur when a recursive merge is conducted on an empty object: `merge({},source)`.\n\n`lodash` and `Hoek` are examples of libraries susceptible to recursive merge attacks.\n\n### Property definition by path\n\nThere are a few JavaScript libraries that use an API to define property values on an object based on a given path. The function that is generally affected contains this signature: `theFunction(object, path, value)`\n\nIf the attacker can control the value of “path”, they can set this value to `__proto__.myValue`. `myValue` is then assigned to the prototype of the class of the object.\n\n## Types of attacks\n\nThere are a few methods by which Prototype Pollution can be manipulated:\n\n| Type |Origin  |Short description |\n|--|--|--|\n| **Denial of service (DoS)**|Client  |This is the most likely attack. <br>DoS occurs when `Object` holds generic functions that are implicitly called for various operations (for example, `toString` and `valueOf`). <br> The attacker pollutes `Object.prototype.someattr` and alters its state to an unexpected value such as `Int` or `Object`. In this case, the code fails and is likely to cause a denial of service.  <br>**For example:** if an attacker pollutes `Object.prototype.toString` by defining it as an integer, if the codebase at any point was reliant on `someobject.toString()` it would fail. |\n |**Remote Code Execution**|Client|Remote code execution is generally only possible in cases where the codebase evaluates a specific attribute of an object, and then executes that evaluation.<br>**For example:** `eval(someobject.someattr)`. In this case, if the attacker pollutes `Object.prototype.someattr` they are likely to be able to leverage this in order to execute code.|\n|**Property Injection**|Client|The attacker pollutes properties that the codebase relies on for their informative value, including security properties such as cookies or tokens.<br>  **For example:** if a codebase checks privileges for `someuser.isAdmin`, then when the attacker pollutes `Object.prototype.isAdmin` and sets it to equal `true`, they can then achieve admin privileges.|\n\n## Affected environments\n\nThe following environments are susceptible to a Prototype Pollution attack:\n\n-   Application server\n    \n-   Web server\n\n-   Web browser\n    \n\n## How to prevent\n\n1.  Freeze the prototype— use `Object.freeze (Object.prototype)`.\n    \n2.  Require schema validation of JSON input.\n    \n3.  Avoid using unsafe recursive merge functions.\n    \n4.  Consider using objects without prototypes (for example, `Object.create(null)`), breaking the prototype chain and preventing pollution.\n    \n5.  As a best practice use `Map` instead of `Object`.\n\n### For more information on this vulnerability type:\n\n[Arteau, Oliver. “JavaScript prototype pollution attack in NodeJS application.” GitHub, 26 May 2018](https://github.com/HoLyVieR/prototype-pollution-nsec18/blob/master/paper/JavaScript_prototype_pollution_attack_in_NodeJS.pdf)\n\n## Remediation\nUpgrade `jquery` to version 3.4.0 or higher.\n## References\n- [GitHub Commit](https://github.com/jquery/jquery/commit/753d591aea698e57d6db58c9f722cd0808619b1b)\n- [GitHub PR](https://github.com/jquery/jquery/pull/4333)\n- [Hackerone Report](https://hackerone.com/reports/454365)\n- [Snyk Blog](https://snyk.io/blog/after-three-years-of-silence-a-new-jquery-prototype-pollution-vulnerability-emerges-once-again/)\n- [Third-Party Backported Patches Repo](https://github.com/DanielRuf/snyk-js-jquery-174006)\n- [Exploit DB](https://www.exploit-db.com/exploits/52141)\n- [PoC in GitHub](https://github.com/chrisneagu/FTC-Skystone-Dark-Angels-Romania-2020)\n",
+      "epssDetails": {
+        "percentile": "0.80999",
+        "probability": "0.01548",
+        "modelVersion": "v2025.03.14"
+      },
+      "identifiers": {
+        "CVE": [
+          "CVE-2019-11358"
+        ],
+        "CWE": [
+          "CWE-1321"
+        ],
+        "NSP": [
+          "796"
+        ],
+        "GHSA": [
+          "GHSA-wv67-q8rr-grjp"
+        ]
+      },
+      "packageName": "jquery",
+      "proprietary": false,
+      "creationTime": "2019-03-27T08:43:07.568451Z",
+      "functions_new": [
+        {
+          "version": [
+            ">2.2.4 <=3.3.1"
+          ],
+          "functionId": {
+            "filePath": "dist/core.js",
+            "functionName": "jQuery.extend.jQuery.fn.extend"
+          }
+        },
+        {
+          "version": [
+            ">1.8.3 <=2.2.4"
+          ],
+          "functionId": {
+            "filePath": "src/core.js",
+            "functionName": "jQuery.extend.jQuery.fn.extend"
+          }
+        },
+        {
+          "version": [
+            "<=1.8.3"
+          ],
+          "functionId": {
+            "filePath": "test/core.js",
+            "functionName": "module.exports.jQuery.extend(Object, Object)"
+          }
+        }
+      ],
+      "alternativeIds": [],
+      "disclosureTime": "2019-03-26T08:40:15Z",
+      "exploitDetails": {
+        "sources": [
+          "ExploitDB",
+          "PoC in GitHub",
+          "Snyk"
+        ],
+        "maturityLevels": [
+          {
+            "type": "secondary",
+            "level": "Functional",
+            "format": "CVSSv3"
+          },
+          {
+            "type": "primary",
+            "level": "Proof of Concept",
+            "format": "CVSSv4"
+          }
+        ]
+      },
+      "packageManager": "npm",
+      "publicationTime": "2019-03-27T08:40:08Z",
+      "severityBasedOn": "CVSS",
+      "modificationTime": "2025-05-21T05:20:03.890832Z",
+      "socialTrendAlert": false,
+      "severityWithCritical": "medium",
+      "from": [
+        "vulnerabilite-tp@1.0.0",
+        "jquery@2.2.4"
+      ],
+      "upgradePath": [
+        false,
+        "jquery@3.5.0"
+      ],
+      "isUpgradable": true,
+      "isPatchable": false,
+      "name": "jquery",
+      "version": "2.2.4"
+    },
+    {
+      "id": "SNYK-JS-JQUERY-565129",
+      "title": "Cross-site Scripting (XSS)",
+      "CVSSv3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:L/I:L/A:L/E:H/RL:O/RC:C",
+      "credit": [
+        "Masato Kinugawa"
+      ],
+      "semver": {
+        "vulnerable": [
+          ">=1.5.1 <3.5.0"
+        ]
+      },
+      "exploit": "High",
+      "fixedIn": [
+        "3.5.0"
+      ],
+      "patches": [],
+      "insights": {
+        "triageAdvice": "This vulnerability is only applicable on applications that allow users to write any HTML or dynamically append HTML (even sanitized) with jQuery."
+      },
+      "language": "js",
+      "severity": "medium",
+      "cvssScore": 6.3,
+      "functions": [
+        {
+          "version": [
+            ">=1.0.3 <3.5.0"
+          ],
+          "functionId": {
+            "filePath": "src/manipulation.js",
+            "className": null,
+            "functionName": "htmlPrefilter"
+          }
+        }
+      ],
+      "malicious": false,
+      "isDisputed": false,
+      "moduleName": "jquery",
+      "references": [
+        {
+          "url": "https://github.com/jquery/jquery/commit/1d61fd9407e6fbe82fe55cb0b938307aa0791f77",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://vulnerabledoma.in/jquery_htmlPrefilter_xss.html",
+          "title": "PoC"
+        },
+        {
+          "url": "https://blog.jquery.com/2020/04/10/jquery-3-5-0-released/",
+          "title": "Release Notes"
+        },
+        {
+          "url": "https://masatokinugawa.l0.cm/2020/05/jquery3.5.0-xss.html",
+          "title": "Security Blog"
+        },
+        {
+          "url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog",
+          "title": "CISA - Known Exploited Vulnerabilities"
+        }
+      ],
+      "cvssDetails": [
+        {
+          "assigner": "NVD",
+          "severity": "medium",
+          "cvssV3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N",
+          "cvssV3BaseScore": 6.1,
+          "modificationTime": "2024-03-11T09:44:28.141025Z"
+        },
+        {
+          "assigner": "Red Hat",
+          "severity": "medium",
+          "cvssV3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N",
+          "cvssV3BaseScore": 6.1,
+          "modificationTime": "2024-03-11T09:53:58.970683Z"
+        }
+      ],
+      "cvssSources": [
+        {
+          "type": "primary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:L/I:L/A:L/E:H/RL:O/RC:C",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 6.3,
+          "cvssVersion": "3.1",
+          "modificationTime": "2024-03-06T14:05:43.345213Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N",
+          "assigner": "NVD",
+          "severity": "medium",
+          "baseScore": 6.1,
+          "cvssVersion": "3.1",
+          "modificationTime": "2024-03-11T09:44:28.141025Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N",
+          "assigner": "Red Hat",
+          "severity": "medium",
+          "baseScore": 6.1,
+          "cvssVersion": "3.1",
+          "modificationTime": "2024-03-11T09:53:58.970683Z"
+        }
+      ],
+      "description": "## Overview\n\n[jquery](https://www.npmjs.com/package/jquery) is a package that makes things like HTML document traversal and manipulation, event handling, animation, and Ajax much simpler with an easy-to-use API that works across a multitude of browsers.\n\n\nAffected versions of this package are vulnerable to Cross-site Scripting (XSS)\nPassing HTML containing `<option>` elements from untrusted sources - even after sanitizing it - to one of jQuery's DOM manipulation methods (i.e. `.html()`, `.append()`, and others) may execute untrusted code.\r\n\r\n**NOTE:** This vulnerability was also assigned CVE-2020-23064.\n\n## Details\n\n\n## Remediation\n\nUpgrade `jquery` to version 3.5.0 or higher.\n\n\n## References\n\n- [GitHub Commit](https://github.com/jquery/jquery/commit/1d61fd9407e6fbe82fe55cb0b938307aa0791f77)\n\n- [PoC](https://vulnerabledoma.in/jquery_htmlPrefilter_xss.html)\n\n- [Release Notes](https://blog.jquery.com/2020/04/10/jquery-3-5-0-released/)\n\n- [Security Blog](https://masatokinugawa.l0.cm/2020/05/jquery3.5.0-xss.html)\n\n- [Exploit DB](https://www.exploit-db.com/exploits/49767)\n\n- [CISA - Known Exploited Vulnerabilities](https://www.cisa.gov/known-exploited-vulnerabilities-catalog)\n",
+      "epssDetails": {
+        "percentile": "0.96682",
+        "probability": "0.32295",
+        "modelVersion": "v2025.03.14"
+      },
+      "identifiers": {
+        "CVE": [
+          "CVE-2020-11023"
+        ],
+        "CWE": [
+          "CWE-79"
+        ],
+        "GHSA": [
+          "GHSA-jpcq-cgw6-v4j6"
+        ]
+      },
+      "packageName": "jquery",
+      "proprietary": false,
+      "creationTime": "2020-04-13T07:16:49.518552Z",
+      "functions_new": [
+        {
+          "version": [
+            ">=1.0.3 <3.5.0"
+          ],
+          "functionId": {
+            "filePath": "src/manipulation.js",
+            "functionName": "htmlPrefilter"
+          }
+        }
+      ],
+      "alternativeIds": [],
+      "disclosureTime": "2020-04-10T00:00:00Z",
+      "exploitDetails": {
+        "sources": [
+          "CISA",
+          "ExploitDB",
+          "Snyk"
+        ],
+        "maturityLevels": [
+          {
+            "type": "secondary",
+            "level": "High",
+            "format": "CVSSv3"
+          },
+          {
+            "type": "primary",
+            "level": "Attacked",
+            "format": "CVSSv4"
+          }
+        ]
+      },
+      "packageManager": "npm",
+      "publicationTime": "2020-04-13T15:33:49Z",
+      "severityBasedOn": "CVSS",
+      "modificationTime": "2025-01-24T04:30:01.522455Z",
+      "socialTrendAlert": false,
+      "severityWithCritical": "medium",
+      "from": [
+        "vulnerabilite-tp@1.0.0",
+        "jquery@2.2.4"
+      ],
+      "upgradePath": [
+        false,
+        "jquery@3.5.0"
+      ],
+      "isUpgradable": true,
+      "isPatchable": false,
+      "name": "jquery",
+      "version": "2.2.4"
+    },
+    {
+      "id": "SNYK-JS-JQUERY-567880",
+      "title": "Cross-site Scripting (XSS)",
+      "CVSSv3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N/E:F/RL:O/RC:R",
+      "credit": [
+        "Masato Kinugawa"
+      ],
+      "semver": {
+        "vulnerable": [
+          ">=1.5.1 <3.5.0"
+        ]
+      },
+      "exploit": "Functional",
+      "fixedIn": [
+        "3.5.0"
+      ],
+      "patches": [],
+      "insights": {
+        "triageAdvice": "This vulnerability is only applicable on applications that allow users to write any HTML or dynamically append HTML (even sanitized) with jQuery."
+      },
+      "language": "js",
+      "severity": "medium",
+      "cvssScore": 6.5,
+      "functions": [],
+      "malicious": false,
+      "isDisputed": false,
+      "moduleName": "jquery",
+      "references": [
+        {
+          "url": "https://github.com/jquery/jquery/security/advisories/GHSA-gxr4-xjj5-5px2",
+          "title": "GHSA"
+        },
+        {
+          "url": "https://github.com/jquery/jquery/commit/1d61fd9407e6fbe82fe55cb0b938307aa0791f77",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://blog.jquery.com/2020/04/10/jquery-3-5-0-released/",
+          "title": "JQuery 3.5.0 Release"
+        },
+        {
+          "url": "https://jquery.com/upgrade-guide/3.5/",
+          "title": "JQuery Upgrade Guide"
+        },
+        {
+          "url": "https://vulnerabledoma.in/jquery_htmlPrefilter_xss.html",
+          "title": "PoC"
+        },
+        {
+          "url": "https://mksben.l0.cm/2020/05/jquery3.5.0-xss.html",
+          "title": "Security Blog"
+        },
+        {
+          "url": "https://github.com/Athlon1600/youtube-downloader/blob/215b2b74f5eea5a1e8c1b9ada28c72ca35e5ab4f/public/index.html%23L6",
+          "title": "Vulnerable Code"
+        },
+        {
+          "url": "https://www.exploit-db.com/exploits/49766",
+          "title": "Exploit DB"
+        },
+        {
+          "url": "https://github.com/0xAJ2K/CVE-2020-11022-CVE-2020-11023",
+          "title": "PoC in GitHub"
+        }
+      ],
+      "cvssDetails": [
+        {
+          "assigner": "Red Hat",
+          "severity": "medium",
+          "cvssV3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N",
+          "cvssV3BaseScore": 6.1,
+          "modificationTime": "2025-11-22T09:00:35.190737Z"
+        },
+        {
+          "assigner": "NVD",
+          "severity": "medium",
+          "cvssV3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N",
+          "cvssV3BaseScore": 6.1,
+          "modificationTime": "2024-03-11T09:48:14.383890Z"
+        }
+      ],
+      "cvssSources": [
+        {
+          "type": "primary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N/E:F/RL:O/RC:R",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 6.5,
+          "cvssVersion": "3.1",
+          "modificationTime": "2024-11-04T13:57:01.985856Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N",
+          "assigner": "Red Hat",
+          "severity": "medium",
+          "baseScore": 6.1,
+          "cvssVersion": "3.1",
+          "modificationTime": "2025-11-22T09:00:35.190737Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N",
+          "assigner": "NVD",
+          "severity": "medium",
+          "baseScore": 6.1,
+          "cvssVersion": "3.1",
+          "modificationTime": "2024-03-11T09:48:14.383890Z"
+        }
+      ],
+      "description": "## Overview\n[jquery](https://www.npmjs.com/package/jquery) is a package that makes things like HTML document traversal and manipulation, event handling, animation, and Ajax much simpler with an easy-to-use API that works across a multitude of browsers.\n\nAffected versions of this package are vulnerable to Cross-site Scripting (XSS). Passing HTML from untrusted sources - even after sanitizing it - to one of jQuery's DOM manipulation methods (i.e. `.html(), .append()`, and others) may execute untrusted code.\n## Remediation\nUpgrade `jquery` to version 3.5.0 or higher.\n## References\n- [GHSA](https://github.com/jquery/jquery/security/advisories/GHSA-gxr4-xjj5-5px2)\n- [GitHub Commit](https://github.com/jquery/jquery/commit/1d61fd9407e6fbe82fe55cb0b938307aa0791f77)\n- [JQuery 3.5.0 Release](https://blog.jquery.com/2020/04/10/jquery-3-5-0-released/)\n- [JQuery Upgrade Guide](https://jquery.com/upgrade-guide/3.5/)\n- [PoC](https://vulnerabledoma.in/jquery_htmlPrefilter_xss.html)\n- [Security Blog](https://mksben.l0.cm/2020/05/jquery3.5.0-xss.html)\n- [Vulnerable Code](https://github.com/Athlon1600/youtube-downloader/blob/215b2b74f5eea5a1e8c1b9ada28c72ca35e5ab4f/public/index.html#L6)\n- [Exploit DB](https://www.exploit-db.com/exploits/49766)\n- [PoC in GitHub](https://github.com/0xAJ2K/CVE-2020-11022-CVE-2020-11023)\n",
+      "epssDetails": {
+        "percentile": "0.95041",
+        "probability": "0.18632",
+        "modelVersion": "v2025.03.14"
+      },
+      "identifiers": {
+        "CVE": [
+          "CVE-2020-11022"
+        ],
+        "CWE": [
+          "CWE-79"
+        ],
+        "NSP": [
+          "1518"
+        ],
+        "GHSA": [
+          "GHSA-gxr4-xjj5-5px2",
+          "GHSA-v73w-r9xg-7cr9"
+        ]
+      },
+      "packageName": "jquery",
+      "proprietary": false,
+      "creationTime": "2020-04-30T12:29:39.885866Z",
+      "functions_new": [],
+      "alternativeIds": [],
+      "disclosureTime": "2020-04-29T23:02:09Z",
+      "exploitDetails": {
+        "sources": [
+          "ExploitDB",
+          "PoC in GitHub",
+          "Snyk"
+        ],
+        "maturityLevels": [
+          {
+            "type": "secondary",
+            "level": "Functional",
+            "format": "CVSSv3"
+          },
+          {
+            "type": "primary",
+            "level": "Proof of Concept",
+            "format": "CVSSv4"
+          }
+        ]
+      },
+      "packageManager": "npm",
+      "publicationTime": "2020-04-29T23:02:09Z",
+      "severityBasedOn": "CVSS",
+      "modificationTime": "2025-11-22T09:00:35.190737Z",
+      "socialTrendAlert": false,
+      "severityWithCritical": "medium",
+      "from": [
+        "vulnerabilite-tp@1.0.0",
+        "jquery@2.2.4"
+      ],
+      "upgradePath": [
+        false,
+        "jquery@3.5.0"
+      ],
+      "isUpgradable": true,
+      "isPatchable": false,
+      "name": "jquery",
+      "version": "2.2.4"
+    },
+    {
+      "id": "npm:jquery:20150627",
+      "title": "Cross-site Scripting (XSS)",
+      "CVSSv3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:L/I:L/A:N/E:P",
+      "credit": [
+        "Egor Homakov"
+      ],
+      "semver": {
+        "vulnerable": [
+          "<1.12.0",
+          ">=1.12.3 <3.0.0-beta1"
+        ]
+      },
+      "exploit": "Proof of Concept",
+      "fixedIn": [
+        "1.12.0",
+        "3.0.0-beta1"
+      ],
+      "patches": [],
+      "insights": {
+        "triageAdvice": null
+      },
+      "language": "js",
+      "severity": "medium",
+      "cvssScore": 5.4,
+      "functions": [],
+      "malicious": false,
+      "isDisputed": false,
+      "moduleName": "jquery",
+      "references": [
+        {
+          "url": "https://github.com/jquery/jquery/commit/f60729f3903d17917dc351f3ac87794de379b0cc",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://github.com/jquery/jquery/pull/2588/commits/c254d308a7d3f1eac4d0b42837804cfffcba4bb2",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://github.com/jquery/jquery/issues/2432",
+          "title": "GitHub Issue"
+        },
+        {
+          "url": "https://github.com/jquery/jquery/pull/2588",
+          "title": "GitHub PR"
+        },
+        {
+          "url": "https://github.com/halkichi0308/CVE-2015-9251",
+          "title": "PoC"
+        }
+      ],
+      "cvssDetails": [
+        {
+          "assigner": "NVD",
+          "severity": "medium",
+          "cvssV3Vector": "CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N",
+          "cvssV3BaseScore": 6.1,
+          "modificationTime": "2024-03-11T09:46:37.451311Z"
+        },
+        {
+          "assigner": "SUSE",
+          "severity": "medium",
+          "cvssV3Vector": "CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N",
+          "cvssV3BaseScore": 6.1,
+          "modificationTime": "2024-03-11T09:49:24.612616Z"
+        },
+        {
+          "assigner": "Red Hat",
+          "severity": "medium",
+          "cvssV3Vector": "CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N",
+          "cvssV3BaseScore": 6.1,
+          "modificationTime": "2024-03-11T09:53:57.098123Z"
+        }
+      ],
+      "cvssSources": [
+        {
+          "type": "primary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:L/I:L/A:N/E:P",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 5.4,
+          "cvssVersion": "3.1",
+          "modificationTime": "2025-08-27T21:00:54.598552Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N",
+          "assigner": "NVD",
+          "severity": "medium",
+          "baseScore": 6.1,
+          "cvssVersion": "3.0",
+          "modificationTime": "2024-03-11T09:46:37.451311Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N",
+          "assigner": "SUSE",
+          "severity": "medium",
+          "baseScore": 6.1,
+          "cvssVersion": "3.0",
+          "modificationTime": "2024-03-11T09:49:24.612616Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N",
+          "assigner": "Red Hat",
+          "severity": "medium",
+          "baseScore": 6.1,
+          "cvssVersion": "3.0",
+          "modificationTime": "2024-03-11T09:53:57.098123Z"
+        }
+      ],
+      "description": "## Overview\n\n[jquery](https://www.npmjs.com/package/jquery) is a package that makes things like HTML document traversal and manipulation, event handling, animation, and Ajax much simpler with an easy-to-use API that works across a multitude of browsers.\n\n\nAffected versions of this package are vulnerable to Cross-site Scripting (XSS)\nattacks when a cross-domain ajax request is performed without the `dataType` option causing `text/javascript` responses to be executed.\r\n\r\n**Note:** After being implemented in version 1.12.0, the fix of this vulnerability was reverted in 1.12.3, and then was only reintroduced in version 3.0.0-beta1. The fix was never released in any tag of the 2.x.x branch, as it was reverted out of the branch before being released.\r\n\r\n**Note:** CVE-2017-16012 is a duplicate of CVE-2015-9251\n\n## Details\n \n\n\n## Remediation\n\nUpgrade `jquery` to version 1.12.0, 3.0.0-beta1 or higher.\n\n\n## References\n\n- [GitHub Commit](https://github.com/jquery/jquery/commit/f60729f3903d17917dc351f3ac87794de379b0cc)\n\n- [GitHub Commit](https://github.com/jquery/jquery/pull/2588/commits/c254d308a7d3f1eac4d0b42837804cfffcba4bb2)\n\n- [GitHub Issue](https://github.com/jquery/jquery/issues/2432)\n\n- [GitHub PR](https://github.com/jquery/jquery/pull/2588)\n\n- [PoC](https://github.com/halkichi0308/CVE-2015-9251)\n",
+      "epssDetails": {
+        "percentile": "0.96210",
+        "probability": "0.27164",
+        "modelVersion": "v2025.03.14"
+      },
+      "identifiers": {
+        "CVE": [
+          "CVE-2015-9251"
+        ],
+        "CWE": [
+          "CWE-79"
+        ],
+        "NSP": [
+          "328"
+        ],
+        "GHSA": [
+          "GHSA-rmxg-73gg-4p98"
+        ],
+        "ALTERNATIVE": [
+          "SNYK-JS-JQUERY-10186",
+          "npm:jquery:20150627"
+        ]
+      },
+      "packageName": "jquery",
+      "proprietary": false,
+      "creationTime": "2016-11-06T15:12:44.538000Z",
+      "functions_new": [],
+      "alternativeIds": [
+        "SNYK-JS-JQUERY-10186"
+      ],
+      "disclosureTime": "2015-06-26T21:00:00Z",
+      "exploitDetails": {
+        "sources": [
+          "Snyk"
+        ],
+        "maturityLevels": [
+          {
+            "type": "secondary",
+            "level": "Proof of Concept",
+            "format": "CVSSv3"
+          },
+          {
+            "type": "primary",
+            "level": "Proof of Concept",
+            "format": "CVSSv4"
+          }
+        ]
+      },
+      "packageManager": "npm",
+      "publicationTime": "2016-11-27T00:00:00Z",
+      "severityBasedOn": "CVSS",
+      "modificationTime": "2025-08-27T21:00:54.598552Z",
+      "socialTrendAlert": false,
+      "severityWithCritical": "medium",
+      "from": [
+        "vulnerabilite-tp@1.0.0",
+        "jquery@2.2.4"
+      ],
+      "upgradePath": [
+        false,
+        "jquery@3.5.0"
+      ],
+      "isUpgradable": true,
+      "isPatchable": false,
+      "name": "jquery",
+      "version": "2.2.4"
+    }
+  ],
+  "ok": false,
+  "dependencyCount": 70,
+  "org": "wilfriedwoze",
+  "policy": "# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.\nversion: v1.25.1\nignore: {}\npatch: {}\n",
+  "isPrivate": true,
+  "licensesPolicy": {
+    "severities": {},
+    "orgLicenseRules": {
+      "AGPL-1.0": {
+        "licenseType": "AGPL-1.0",
+        "severity": "high",
+        "instructions": ""
+      },
+      "AGPL-3.0": {
+        "licenseType": "AGPL-3.0",
+        "severity": "high",
+        "instructions": ""
+      },
+      "Artistic-1.0": {
+        "licenseType": "Artistic-1.0",
+        "severity": "medium",
+        "instructions": ""
+      },
+      "Artistic-2.0": {
+        "licenseType": "Artistic-2.0",
+        "severity": "medium",
+        "instructions": ""
+      },
+      "CDDL-1.0": {
+        "licenseType": "CDDL-1.0",
+        "severity": "medium",
+        "instructions": ""
+      },
+      "CPOL-1.02": {
+        "licenseType": "CPOL-1.02",
+        "severity": "high",
+        "instructions": ""
+      },
+      "EPL-1.0": {
+        "licenseType": "EPL-1.0",
+        "severity": "medium",
+        "instructions": ""
+      },
+      "GPL-2.0": {
+        "licenseType": "GPL-2.0",
+        "severity": "high",
+        "instructions": ""
+      },
+      "GPL-3.0": {
+        "licenseType": "GPL-3.0",
+        "severity": "high",
+        "instructions": ""
+      },
+      "LGPL-2.0": {
+        "licenseType": "LGPL-2.0",
+        "severity": "medium",
+        "instructions": ""
+      },
+      "LGPL-2.1": {
+        "licenseType": "LGPL-2.1",
+        "severity": "medium",
+        "instructions": ""
+      },
+      "LGPL-3.0": {
+        "licenseType": "LGPL-3.0",
+        "severity": "medium",
+        "instructions": ""
+      },
+      "MPL-1.1": {
+        "licenseType": "MPL-1.1",
+        "severity": "medium",
+        "instructions": ""
+      },
+      "MPL-2.0": {
+        "licenseType": "MPL-2.0",
+        "severity": "medium",
+        "instructions": ""
+      },
+      "MS-RL": {
+        "licenseType": "MS-RL",
+        "severity": "medium",
+        "instructions": ""
+      },
+      "SimPL-2.0": {
+        "licenseType": "SimPL-2.0",
+        "severity": "high",
+        "instructions": ""
+      }
+    }
+  },
+  "packageManager": "npm",
+  "ignoreSettings": {
+    "adminOnly": false,
+    "reasonRequired": false,
+    "disregardFilesystemIgnores": false
+  },
+  "summary": "4 vulnerable dependency paths",
+  "remediation": {
+    "unresolved": [],
+    "upgrade": {
+      "jquery@2.2.4": {
+        "upgradeTo": "jquery@3.5.0",
+        "upgrades": [
+          "jquery@2.2.4",
+          "jquery@2.2.4",
+          "jquery@2.2.4",
+          "jquery@2.2.4"
+        ],
+        "vulns": [
+          "SNYK-JS-JQUERY-174006",
+          "SNYK-JS-JQUERY-565129",
+          "SNYK-JS-JQUERY-567880",
+          "npm:jquery:20150627"
+        ]
+      }
+    },
+    "patch": {},
+    "ignore": {},
+    "pin": {}
+  },
+  "filesystemPolicy": false,
+  "filtered": {
+    "ignore": [],
+    "patch": []
+  },
+  "uniqueCount": 4,
+  "projectName": "vulnerabilite-tp",
+  "displayTargetFile": "package-lock.json",
+  "hasUnknownVersions": false,
+  "path": "C:\\Users\\USER\\Desktop\\vulnerabilite-tp"
+}

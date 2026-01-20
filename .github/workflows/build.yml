@@ -5,7 +5,6 @@ on:
       - main
   pull_request:
     types: [opened, synchronize, reopened]
-  workflow_dispatch:
 jobs:
   sonarqube:
     name: SonarQube
@@ -14,9 +13,16 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
-      - name: Show sonar-project.properties
-        run: Get-Content sonar-project.properties
+      - name: Show workspace tree
+        run: Get-ChildItem -Recurse -Force
+      - name: Show git branch and commit
+        run: |
+          Write-Host "GITHUB_REF = $env:GITHUB_REF"
+          Write-Host "GITHUB_SHA = $env:GITHUB_SHA"
+          git --version
+          git branch --show-current || Write-Host "branch info not available"
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io

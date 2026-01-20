@@ -5,22 +5,23 @@ on:
       - main
   pull_request:
     types: [opened, synchronize, reopened]
+  workflow_dispatch:
 jobs:
   sonarqube:
     name: SonarQube
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
       - name: Show workspace tree
-        run: Get-ChildItem -Recurse -Force
+        run: ls -la
       - name: Show git branch and commit
         run: |
-          Write-Host "GITHUB_REF = $env:GITHUB_REF"
-          Write-Host "GITHUB_SHA = $env:GITHUB_SHA"
+          echo "GITHUB_REF = $GITHUB_REF"
+          echo "GITHUB_SHA = $GITHUB_SHA"
           git --version
-          git branch --show-current || Write-Host "branch info not available"
+          git branch --show-current || echo "branch info not available"
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:

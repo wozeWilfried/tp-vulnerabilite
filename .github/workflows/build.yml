@@ -21,6 +21,18 @@ jobs:
           Write-Host "GITHUB_SHA = $env:GITHUB_SHA"
           git --version
           git branch --show-current || Write-Host "branch info not available"
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+      - name: Upload Trivy results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
         env:
